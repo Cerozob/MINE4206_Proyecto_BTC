@@ -198,6 +198,16 @@ def get_past_dframe(pfrom=LSTM_TIMEUNITS_PAST):
     return past_data
 
 
+def get_all_past_dframe():
+    past_data = DATA.iloc[:]
+    past_dates = CLOSE_TIME.iloc[:]
+    past_data.insert(0, "close_time", past_dates)
+    # past_data.insert(0, "is_prediction", False)
+    past_data.set_index("close_time", inplace=True)
+    past_data.reset_index(inplace=True)
+    return past_data
+
+
 def lstm_predict(model=None, window=LSTM_MULTI_WINDOW):
     model = load_rnn_model() if model is None else model
     latest_data = get_window()
@@ -304,6 +314,17 @@ def get_available_arima_models():
 def get_available_rnn_models():
     models = []
     for model in LSTMPATH.iterdir():
+        models.append(model)
+    return models
+
+
+def list_all_models():
+    models = []
+    for model in ARIMAPATH.iterdir():
+        models.append(model)
+    for model in LSTMPATH.iterdir():
+        models.append(model)
+    for model in Path("./models/unused").iterdir():
         models.append(model)
     return models
 

@@ -10,7 +10,7 @@ nn_available_models = ml_utils.get_available_rnn_models()
 global_results_dataframe = ml_utils.get_past_dframe()
 
 names = []
-
+st.info("A continuación podrás elegir entre los mejores modelos obtenidos de cada tipo")
 arima_options = st.multiselect(
     'Elegir modelos ARIMA a usar',
     arima_available_models,
@@ -44,7 +44,8 @@ if arima_options or rnn_options:
     if st.button('**Predecir**'):
         if len(rnn_options) > 0:
             lstmwarn = st.warning(
-                "Los modelos LSTM pueden tardar bastante más tiempo en predecir, pero mostraron ser más precisos en nuestras pruebas", icon="⚠️")
+                "Los modelos LSTM pueden tardar bastante más tiempo en predecir, pero mostraron ser más precisos en nuestras pruebas",
+                  icon="⚠️")
         with st.spinner(f'Prediciendo resultados con {len(arima_options)} ARIMAs y {len(rnn_options)} LSTMs...'):
             arimaresults = call_prediction_arima(arima_options)
             if arimaresults is None or len(arimaresults) == 0:
@@ -80,3 +81,17 @@ else:
 thechart = st.line_chart(global_results_dataframe, use_container_width=True,
                          x="close_time", y=["close"]+names)
 # st.dataframe(global_results_dataframe)
+
+st.write('---')
+st.write('## Información adicional')
+st.info("A continuación se muestra una lista más extensa de los modelos disponibles")
+st.write([m.stem for m in ml_utils.list_all_models()])
+
+st.info('Aquí podrás ver los datos completos obtenidos de Binance.\nPuedes hacer click en el botón "Mostrar" para desplegar el gráfico.')
+st.warning('Cuidado, esto puede causar problemas de rendimiento en tu navegador')
+
+if st.button('Mostrar datos'):
+    alldframe = ml_utils.get_all_past_dframe()
+    st.line_chart(alldframe, use_container_width=True,
+                  x="close_time", y=["close"])
+    st.dataframe(alldframe)
