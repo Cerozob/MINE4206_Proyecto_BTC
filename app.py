@@ -5,7 +5,8 @@ st.write('Hello world!')
 
 options = st.multiselect(
     'What are your favorite colors',
-    [ml_utils.get_available_models()]
+    # [ml_utils.get_available_models()]
+    ["hello", "world"]
 )
 
 st.write('You selected:', options)
