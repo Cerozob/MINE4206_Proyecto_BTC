@@ -14,7 +14,7 @@ names = []
 arima_options = st.multiselect(
     'Elegir modelos ARIMA a usar',
     arima_available_models,
-    format_func=lambda x: x.stem,
+    format_func=lambda x: x.stem.upper(),
     default=[],
     help='Selecciona los modelos ARIMA o SARIMA que quieras usar'
 )
@@ -22,7 +22,7 @@ arima_options = st.multiselect(
 rnn_options = st.multiselect(
     'Elegir modelos RNN a usar',
     nn_available_models,
-    format_func=lambda x: x.stem,
+    format_func=lambda x: x.stem.upper(),
     default=[],
     help='Selecciona los modelos LSTM que quieras usar'
 )
