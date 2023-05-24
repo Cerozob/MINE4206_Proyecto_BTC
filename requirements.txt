@@ -1,15 +1,9 @@
 arrow
 keras
-matplotlib
-matplotlib-inline
 numpy
 pandas
-plotly
 pyarrow
-requests
-scikit-learn
-scipy
-seaborn
 statsmodels
 tensorflow
 backports-zoneinfo
+streamlit

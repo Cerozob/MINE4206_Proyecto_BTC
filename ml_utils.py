@@ -61,7 +61,7 @@ def load_rnn_model(name="LSTM_normalized.h5"):
 
 class WindowGenerator():
     def __init__(self, input_width, label_width, shift,
-                 train_df, val_df, test_df,
+                 train_df, val_df=None, test_df=None,
                  label_columns=None):
         # Store the raw data.
         self.train_df = train_df
@@ -161,7 +161,7 @@ LSTM_OUTPUT_LABELS = list(DATA.columns)
 LSTM_N_OUTPUTS = len(LSTM_OUTPUT_LABELS)
 LSTM_MULTI_WINDOW = WindowGenerator(input_width=LSTM_TIMEUNITS_PAST,
                                     label_width=LSTM_TIMEUNITS_FUTURE,
-                                    shift=LSTM_TIMEUNITS_SHIFT, label_columns=LSTM_OUTPUT_LABELS)
+                                    shift=LSTM_TIMEUNITS_SHIFT, label_columns=LSTM_OUTPUT_LABELS, train_df=NORM_DATA)
 
 
 def get_window(hours_past=24*7*4, normalized_data=NORM_DATA):
@@ -198,7 +198,8 @@ def get_past_dframe(pfrom=LSTM_TIMEUNITS_PAST):
     return past_data
 
 
-def lstm_predict(model=load_rnn_model(), window=LSTM_MULTI_WINDOW):
+def lstm_predict(model=None, window=LSTM_MULTI_WINDOW):
+    model = load_rnn_model() if model is None else model
     latest_data = get_window()
     latest_dataset = window.make_dataset(latest_data[1])
     result = model.predict(latest_dataset)
@@ -215,7 +216,7 @@ def lstm_predict(model=load_rnn_model(), window=LSTM_MULTI_WINDOW):
     return results_dframe, past_dates_used, next_time
 
 
-def lstm_stitch_predictions_norm(past_dframe=get_past_norm_dframe(), predictions_dframe=lstm_predict()[0]
+def lstm_stitch_predictions_norm(past_dframe=None, predictions_dframe=None
                                  ):
     """
     past_dframe: dataframe with the past data
@@ -227,6 +228,9 @@ def lstm_stitch_predictions_norm(past_dframe=get_past_norm_dframe(), predictions
 
     """
     # stitch past and predictions
+    past_dframe = get_past_norm_dframe() if past_dframe is None else past_dframe
+    predictions_dframe = lstm_predict(
+    )[0] if predictions_dframe is None else predictions_dframe
     past_dframe = pd.concat([past_dframe, predictions_dframe])
     past_dframe.set_index("close_time", inplace=True)
     past_dframe.sort_index(inplace=True)
@@ -257,7 +261,8 @@ def arima_get_past_dframe(pfrom=LSTM_TIMEUNITS_PAST):
     return past_data
 
 
-def arima_predict(model=load_arima_model()):
+def arima_predict(model=None):
+    model = load_arima_model() if model is None else model
     preds = model.forecast(steps=ARIMA_TIMEUNITS_FUTURE).to_frame()
     preds.rename(columns={'predicted_mean': 'close'}, inplace=True)
     preds.index.name = "close_time"
@@ -266,7 +271,7 @@ def arima_predict(model=load_arima_model()):
     return preds
 
 
-def arima_stitch_predictions(past_dframe=get_past_dframe(), predictions_dframe=arima_predict()):
+def arima_stitch_predictions(past_dframe=None, predictions_dframe=None):
     """
     past_dframe: dataframe with the past data not normalized
     predictions_dframe: dataframe with the predictions not normalized
@@ -277,6 +282,9 @@ def arima_stitch_predictions(past_dframe=get_past_dframe(), predictions_dframe=a
 
     """
     # stitch past and predictions
+    past_dframe = get_past_dframe() if past_dframe is None else past_dframe
+    predictions_dframe = arima_predict(
+    ) if predictions_dframe is None else predictions_dframe
     past_dframe = pd.concat([past_dframe, predictions_dframe])
     past_dframe.set_index("close_time", inplace=True)
     past_dframe.sort_index(inplace=True)
@@ -285,13 +293,44 @@ def arima_stitch_predictions(past_dframe=get_past_dframe(), predictions_dframe=a
     return past_dframe
 
 
-def get_available_models():
+def get_available_arima_models():
     models = []
     for model in ARIMAPATH.iterdir():
-        models.append(model.stem)
-    for model in LSTMPATH.iterdir():
-        models.append(model.stem)
+        models.append(model)
     return models
+
+
+def get_available_rnn_models():
+    models = []
+    for model in LSTMPATH.iterdir():
+        models.append(model)
+    return models
+
+
+def predict_with_arimas(models=[]):
+    if len(models) == 0:
+        return []
+    results = []
+    for model in models:
+        if "sarima" in model.stem:
+            arimamodel = load_sarimax_model(model.name)
+        else:
+            arimamodel = load_arima_model(model.name)
+        preds = arima_predict(arimamodel)
+        results.append((model.stem, preds))
+    return results
+
+
+def predict_with_rnns(models=[]):
+    if len(models) == 0:
+        return []
+    results = []
+    for model in models:
+        rnnmodel = load_rnn_model(model.name)
+        preds = lstm_predict(rnnmodel)[0]
+        preds[["close"]] = denormalize_dataset(preds[["close"]])
+        results.append((model.stem, preds))
+    return results
 
 
 if __name__ == "__main__":
