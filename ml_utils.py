@@ -182,7 +182,7 @@ def get_past_norm_dframe(pfrom=LSTM_TIMEUNITS_PAST):
     past_data = NORM_DATA.iloc[-pfrom:]
     past_dates = CLOSE_TIME.iloc[-pfrom:]
     past_data.insert(0, "close_time", past_dates)
-    past_data.insert(0, "is_prediction", False)
+    # past_data.insert(0, "is_prediction", False)
     past_data.set_index("close_time", inplace=True)
     past_data.reset_index(inplace=True)
     return past_data
@@ -192,7 +192,7 @@ def get_past_dframe(pfrom=LSTM_TIMEUNITS_PAST):
     past_data = DATA.iloc[-pfrom:]
     past_dates = CLOSE_TIME.iloc[-pfrom:]
     past_data.insert(0, "close_time", past_dates)
-    past_data.insert(0, "is_prediction", False)
+    # past_data.insert(0, "is_prediction", False)
     past_data.set_index("close_time", inplace=True)
     past_data.reset_index(inplace=True)
     return past_data
@@ -210,7 +210,7 @@ def lstm_predict(model=None, window=LSTM_MULTI_WINDOW):
     future_dates = gen_dates(pfrom=last_time, dframe=results_dframe)
     # put everything together
     results_dframe.insert(0, "close_time", future_dates)
-    results_dframe.insert(0, "is_prediction", True)
+    # results_dframe.insert(0, "is_prediction", True)
     results_dframe.set_index("close_time", inplace=True)
     results_dframe.reset_index(inplace=True)
     return results_dframe, past_dates_used, next_time
@@ -252,7 +252,7 @@ def arima_get_past_dframe(pfrom=LSTM_TIMEUNITS_PAST):
     past_data.insert(0, "close_time", past_dates)
     past_data = past_data.resample(
         "1D", on="close_time").mean(numeric_only=False)
-    past_data.insert(0, "is_prediction", False)
+    # past_data.insert(0, "is_prediction", False)
     past_data.reset_index(inplace=True)
     past_data.set_index("close_time", inplace=True)
     # de verdad se hace ambas veces a proposito
@@ -264,10 +264,11 @@ def arima_get_past_dframe(pfrom=LSTM_TIMEUNITS_PAST):
 def arima_predict(model=None):
     model = load_arima_model() if model is None else model
     preds = model.forecast(steps=ARIMA_TIMEUNITS_FUTURE).to_frame()
+    preds = preds.resample("1H").ffill()
     preds.rename(columns={'predicted_mean': 'close'}, inplace=True)
     preds.index.name = "close_time"
     preds.reset_index(inplace=True)
-    preds.insert(0, "is_prediction", True)
+    # preds.insert(0, "is_prediction", True)
     return preds
 
 
